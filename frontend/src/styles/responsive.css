@@ -1,0 +1,203 @@
+/* Responsive styles for the Items application */
+
+/* Base responsive typography */
+@media (max-width: 768px) {
+  .items-container {
+    padding: 12px !important;
+  }
+  
+  .items-header h1 {
+    font-size: 24px !important;
+    margin-bottom: 8px !important;
+  }
+  
+  .items-header p {
+    font-size: 16px !important;
+  }
+  
+  .search-section {
+    padding: 16px !important;
+    margin-bottom: 16px !important;
+  }
+  
+  .search-input {
+    font-size: 16px !important; /* Prevents zoom on iOS */
+  }
+}
+
+/* Mobile pagination controls */
+@media (max-width: 640px) {
+  .pagination-controls {
+    flex-direction: column !important;
+    gap: 16px !important;
+    align-items: stretch !important;
+  }
+  
+  .pagination-nav {
+    justify-content: center !important;
+  }
+  
+  .pagination-nav button {
+    font-size: 14px !important;
+    padding: 8px 12px !important;
+  }
+  
+  .pagination-select {
+    text-align: center !important;
+  }
+  
+  .results-info {
+    flex-direction: column !important;
+    align-items: flex-start !important;
+    gap: 8px !important;
+  }
+}
+
+/* Mobile item list adjustments */
+@media (max-width: 768px) {
+  .item-row {
+    flex-direction: column !important;
+    align-items: flex-start !important;
+    gap: 12px !important;
+    padding: 16px !important;
+  }
+  
+  .item-content {
+    width: 100% !important;
+  }
+  
+  .item-meta {
+    width: 100% !important;
+    justify-content: space-between !important;
+  }
+  
+  .virtualized-item {
+    height: auto !important;
+    min-height: 80px !important;
+  }
+}
+
+/* Touch-friendly buttons on mobile */
+@media (hover: none) and (pointer: coarse) {
+  button, 
+  .button {
+    min-height: 44px !important;
+    min-width: 44px !important;
+  }
+  
+  .clear-search-btn {
+    width: 32px !important;
+    height: 32px !important;
+  }
+}
+
+/* High contrast mode support */
+@media (prefers-contrast: high) {
+  .item-row {
+    border: 2px solid !important;
+  }
+  
+  .search-input {
+    border: 2px solid !important;
+  }
+  
+  .badge {
+    border: 1px solid !important;
+  }
+}
+
+/* Reduced motion preferences */
+@media (prefers-reduced-motion: reduce) {
+  * {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+  }
+  
+  .skeleton {
+    animation: none !important;
+  }
+}
+
+/* Dark mode support (if user has system preference) */
+@media (prefers-color-scheme: dark) {
+  :root {
+    --bg-color: #1a1a1a;
+    --text-color: #ffffff;
+    --border-color: #333333;
+    --card-bg: #2d2d2d;
+  }
+  
+  body {
+    background-color: var(--bg-color);
+    color: var(--text-color);
+  }
+  
+  .card,
+  .search-section,
+  .pagination-controls {
+    background-color: var(--card-bg) !important;
+    border-color: var(--border-color) !important;
+  }
+  
+  .item-row {
+    border-color: var(--border-color) !important;
+  }
+  
+  .search-input,
+  select {
+    background-color: var(--card-bg) !important;
+    color: var(--text-color) !important;
+    border-color: var(--border-color) !important;
+  }
+}
+
+/* Large screens optimization */
+@media (min-width: 1200px) {
+  .items-container {
+    max-width: 1400px !important;
+  }
+  
+  .results-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(400px, 1fr));
+    gap: 16px;
+  }
+}
+
+/* Print styles */
+@media print {
+  .search-section,
+  .pagination-controls,
+  nav {
+    display: none !important;
+  }
+  
+  .item-row {
+    break-inside: avoid !important;
+    margin-bottom: 8px !important;
+  }
+  
+  .items-container {
+    max-width: none !important;
+    padding: 0 !important;
+  }
+}
+
+/* Focus visible for better keyboard navigation */
+@supports selector(:focus-visible) {
+  button:focus:not(:focus-visible),
+  input:focus:not(:focus-visible),
+  select:focus:not(:focus-visible),
+  a:focus:not(:focus-visible) {
+    outline: none;
+  }
+  
+  button:focus-visible,
+  input:focus-visible,
+  select:focus-visible,
+  a:focus-visible {
+    outline: 2px solid #007bff;
+    outline-offset: 2px;
+  }
+}

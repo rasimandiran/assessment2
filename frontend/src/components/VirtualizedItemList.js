@@ -2,10 +2,12 @@ import React, { memo } from 'react';
 import { List } from 'react-window';
 import AutoSizer from 'react-virtualized-auto-sizer';
 import { Link } from 'react-router-dom';
+import { theme, commonStyles } from '../styles/theme';
 
 // Memoized row component for performance
 const Row = ({ index, style, data }) => {
   const item = data[index];
+  const isEven = index % 2 === 0;
   
   if (!item) return null;
   
@@ -16,35 +18,64 @@ const Row = ({ index, style, data }) => {
           display: 'flex',
           justifyContent: 'space-between',
           alignItems: 'center',
-          padding: '10px 20px',
-          borderBottom: '1px solid #eee',
-          height: '100%'
+          padding: theme.spacing.lg,
+          borderBottom: `1px solid ${theme.colors.borderLight}`,
+          backgroundColor: isEven ? theme.colors.white : theme.colors.gray50,
+          height: '100%',
+          transition: 'background-color 0.2s ease'
+        }}
+        onMouseEnter={(e) => {
+          e.target.style.backgroundColor = theme.colors.primaryLight;
+        }}
+        onMouseLeave={(e) => {
+          e.target.style.backgroundColor = isEven ? theme.colors.white : theme.colors.gray50;
         }}
       >
         <Link 
           to={`/items/${item.id}`}
           style={{ 
             textDecoration: 'none', 
-            color: '#0066cc',
-            flex: 1
+            color: theme.colors.primary,
+            fontSize: theme.typography.fontSize.md,
+            fontWeight: theme.typography.fontWeight.medium,
+            flex: 1,
+            display: 'flex',
+            alignItems: 'center',
+            gap: theme.spacing.sm
+          }}
+          onFocus={(e) => {
+            e.target.style.outline = `2px solid ${theme.colors.primary}`;
+            e.target.style.outlineOffset = '2px';
+          }}
+          onBlur={(e) => {
+            e.target.style.outline = 'none';
           }}
         >
+          <span role="img" aria-label="Item">📦</span>
           {item.name}
         </Link>
         
-        <div style={{ display: 'flex', gap: '10px', alignItems: 'center' }}>
+        <div style={{ 
+          display: 'flex', 
+          gap: theme.spacing.md, 
+          alignItems: 'center' 
+        }}>
           {item.category && (
             <span style={{ 
-              padding: '2px 8px',
-              backgroundColor: '#f0f0f0',
-              borderRadius: '4px',
-              fontSize: '14px'
+              ...commonStyles.badge.base,
+              ...commonStyles.badge.variants.secondary
             }}>
               {item.category}
             </span>
           )}
           {item.price && (
-            <span style={{ fontWeight: 'bold', minWidth: '80px', textAlign: 'right' }}>
+            <span style={{ 
+              fontWeight: theme.typography.fontWeight.semibold,
+              color: theme.colors.success,
+              fontSize: theme.typography.fontSize.md,
+              minWidth: '80px', 
+              textAlign: 'right'
+            }}>
               ${item.price}
             </span>
           )}
