@@ -2,6 +2,7 @@ import React, { useEffect, useState, useCallback } from 'react';
 import { useData } from '../state/DataContext';
 import { Link, useSearchParams } from 'react-router-dom';
 import { debounce } from '../utils/debounce';
+import VirtualizedItemList from '../components/VirtualizedItemList';
 
 function Items() {
   const { items, pagination, loading, fetchItems } = useData();
@@ -14,6 +15,9 @@ function Items() {
   
   // Local search input state
   const [searchInput, setSearchInput] = useState(search);
+  
+  // Determine if we should use virtualization
+  const shouldVirtualize = items.length > 50;
   
   // Debounced search handler
   const debouncedSearch = useCallback(
@@ -75,8 +79,51 @@ function Items() {
     };
   }, [fetchItems, page, search, limit]);
 
+  // Regular list rendering for small datasets
+  const renderRegularList = () => (
+    <ul style={{ listStyle: 'none', padding: 0 }}>
+      {items.map(item => (
+        <li 
+          key={item.id} 
+          style={{ 
+            padding: '10px', 
+            borderBottom: '1px solid #eee',
+            display: 'flex',
+            justifyContent: 'space-between',
+            alignItems: 'center'
+          }}
+        >
+          <Link 
+            to={`/items/${item.id}`}
+            style={{ textDecoration: 'none', color: '#0066cc' }}
+          >
+            {item.name}
+          </Link>
+          <div>
+            {item.category && (
+              <span style={{ 
+                marginRight: '10px', 
+                padding: '2px 8px',
+                backgroundColor: '#f0f0f0',
+                borderRadius: '4px',
+                fontSize: '14px'
+              }}>
+                {item.category}
+              </span>
+            )}
+            {item.price && (
+              <span style={{ fontWeight: 'bold' }}>
+                ${item.price}
+              </span>
+            )}
+          </div>
+        </li>
+      ))}
+    </ul>
+  );
+
   return (
-    <div style={{ padding: '20px' }}>
+    <div style={{ padding: '20px', display: 'flex', flexDirection: 'column', height: '100vh' }}>
       <h1>Items</h1>
       
       {/* Search Bar */}
@@ -107,57 +154,37 @@ function Items() {
         <>
           {/* Results Info */}
           {pagination && (
-            <p style={{ color: '#666', marginBottom: '10px' }}>
-              Showing {items.length} of {pagination.totalItems} items
-              {search && ` matching "${search}"`}
-            </p>
+            <div style={{ marginBottom: '10px' }}>
+              <p style={{ color: '#666', margin: 0 }}>
+                Showing {items.length} of {pagination.totalItems} items
+                {search && ` matching "${search}"`}
+              </p>
+              {shouldVirtualize && (
+                <p style={{ color: '#0066cc', fontSize: '14px', margin: '5px 0' }}>
+                  ⚡ Using virtualization for better performance
+                </p>
+              )}
+            </div>
           )}
           
-          {/* Items List */}
-          <ul style={{ listStyle: 'none', padding: 0 }}>
-            {items.map(item => (
-              <li 
-                key={item.id} 
-                style={{ 
-                  padding: '10px', 
-                  borderBottom: '1px solid #eee',
-                  display: 'flex',
-                  justifyContent: 'space-between',
-                  alignItems: 'center'
-                }}
-              >
-                <Link 
-                  to={`/items/${item.id}`}
-                  style={{ textDecoration: 'none', color: '#0066cc' }}
-                >
-                  {item.name}
-                </Link>
-                <div>
-                  {item.category && (
-                    <span style={{ 
-                      marginRight: '10px', 
-                      padding: '2px 8px',
-                      backgroundColor: '#f0f0f0',
-                      borderRadius: '4px',
-                      fontSize: '14px'
-                    }}>
-                      {item.category}
-                    </span>
-                  )}
-                  {item.price && (
-                    <span style={{ fontWeight: 'bold' }}>
-                      ${item.price}
-                    </span>
-                  )}
-                </div>
-              </li>
-            ))}
-          </ul>
+          {/* Items List - Virtualized or Regular */}
+          <div style={{ flex: 1, minHeight: 0, marginBottom: '20px' }}>
+            {shouldVirtualize ? (
+              <VirtualizedItemList 
+                items={items} 
+                height="auto"
+              />
+            ) : (
+              renderRegularList()
+            )}
+          </div>
           
           {/* Pagination Controls */}
           {pagination && pagination.totalPages > 1 && (
             <div style={{ 
-              marginTop: '20px', 
+              marginTop: 'auto',
+              paddingTop: '20px',
+              borderTop: '1px solid #eee',
               display: 'flex', 
               justifyContent: 'space-between',
               alignItems: 'center',
@@ -217,6 +244,7 @@ function Items() {
                   <option value="20">20</option>
                   <option value="50">50</option>
                   <option value="100">100</option>
+                  <option value="500">500 (Virtualized)</option>
                 </select>
               </div>
             </div>
