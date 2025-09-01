@@ -1,19 +1,55 @@
 const express = require('express');
-const fs = require('fs');
+const fs = require('fs').promises;
 const path = require('path');
 const router = express.Router();
 const DATA_PATH = path.join(__dirname, '../../../data/items.json');
 
-// Utility to read data (intentionally sync to highlight blocking issue)
-function readData() {
-  const raw = fs.readFileSync(DATA_PATH);
-  return JSON.parse(raw);
+// Async utility to read data (non-blocking)
+async function readData() {
+  try {
+    const raw = await fs.readFile(DATA_PATH, 'utf8');
+    return JSON.parse(raw);
+  } catch (error) {
+    if (error.code === 'ENOENT') {
+      // File doesn't exist, return empty array
+      console.log('Data file not found, returning empty array');
+      return [];
+    }
+    if (error.name === 'SyntaxError') {
+      console.error('Invalid JSON in data file:', error.message);
+      throw new Error('Data file is corrupted');
+    }
+    throw error;
+  }
+}
+
+// Async utility to write data (non-blocking)
+async function writeData(data) {
+  try {
+    // Ensure data directory exists
+    const dataDir = path.dirname(DATA_PATH);
+    try {
+      await fs.access(dataDir);
+    } catch {
+      await fs.mkdir(dataDir, { recursive: true });
+    }
+    
+    // Write data atomically
+    const tempPath = DATA_PATH + '.tmp';
+    const jsonString = JSON.stringify(data, null, 2);
+    
+    await fs.writeFile(tempPath, jsonString, 'utf8');
+    await fs.rename(tempPath, DATA_PATH);
+  } catch (error) {
+    console.error('Error writing data file:', error.message);
+    throw error;
+  }
 }
 
 // GET /api/items
-router.get('/', (req, res, next) => {
+router.get('/', async (req, res, next) => {
   try {
-    const data = readData();
+    const data = await readData();
     
     // Parse query parameters with defaults
     const page = parseInt(req.query.page) || 1;
@@ -72,9 +108,9 @@ router.get('/', (req, res, next) => {
 });
 
 // GET /api/items/:id
-router.get('/:id', (req, res, next) => {
+router.get('/:id', async (req, res, next) => {
   try {
-    const data = readData();
+    const data = await readData();
     const item = data.find(i => i.id === parseInt(req.params.id));
     if (!item) {
       const err = new Error('Item not found');
@@ -88,14 +124,14 @@ router.get('/:id', (req, res, next) => {
 });
 
 // POST /api/items
-router.post('/', (req, res, next) => {
+router.post('/', async (req, res, next) => {
   try {
     // TODO: Validate payload (intentional omission)
     const item = req.body;
-    const data = readData();
+    const data = await readData();
     item.id = Date.now();
     data.push(item);
-    fs.writeFileSync(DATA_PATH, JSON.stringify(data, null, 2));
+    await writeData(data);
     res.status(201).json(item);
   } catch (err) {
     next(err);
