@@ -14,19 +14,58 @@ function readData() {
 router.get('/', (req, res, next) => {
   try {
     const data = readData();
-    const { limit, q } = req.query;
+    
+    // Parse query parameters with defaults
+    const page = parseInt(req.query.page) || 1;
+    const limit = parseInt(req.query.limit) || 20;
+    const q = req.query.q || '';
+    const sortBy = req.query.sortBy || 'name';
+    const sortOrder = req.query.sortOrder || 'asc';
+    
+    // Filter results
     let results = data;
-
     if (q) {
-      // Simple substring search (sub‑optimal)
-      results = results.filter(item => item.name.toLowerCase().includes(q.toLowerCase()));
+      const searchTerm = q.toLowerCase();
+      results = results.filter(item => 
+        item.name.toLowerCase().includes(searchTerm) ||
+        (item.category && item.category.toLowerCase().includes(searchTerm))
+      );
     }
-
-    if (limit) {
-      results = results.slice(0, parseInt(limit));
-    }
-
-    res.json(results);
+    
+    // Sort results
+    results.sort((a, b) => {
+      const aVal = a[sortBy];
+      const bVal = b[sortBy];
+      const order = sortOrder === 'asc' ? 1 : -1;
+      
+      if (typeof aVal === 'string') {
+        return aVal.localeCompare(bVal) * order;
+      }
+      return (aVal - bVal) * order;
+    });
+    
+    // Calculate pagination
+    const totalItems = results.length;
+    const totalPages = Math.ceil(totalItems / limit);
+    const offset = (page - 1) * limit;
+    const paginatedResults = results.slice(offset, offset + limit);
+    
+    // Return paginated response with metadata
+    res.json({
+      data: paginatedResults,
+      pagination: {
+        page,
+        limit,
+        totalItems,
+        totalPages,
+        hasNextPage: page < totalPages,
+        hasPrevPage: page > 1
+      },
+      search: {
+        query: q,
+        resultsCount: results.length
+      }
+    });
   } catch (err) {
     next(err);
   }
