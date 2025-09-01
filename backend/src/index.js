@@ -10,9 +10,10 @@ require('dotenv').config();
 
 const app = express();
 const PORT = parseInt(process.env.PORT, 10) || 4001;
+const FRONTEND_PORT = parseInt(process.env.FRONTEND_PORT, 10) || 3000;
 
 // Middleware
-app.use(cors({ origin: `http://localhost:${PORT}` }));
+app.use(cors({ origin: `http://localhost:${FRONTEND_PORT}` }));
 app.use(express.json());
 app.use(morgan('dev'));
 
