@@ -19,7 +19,7 @@ export function DataProvider({ children }) {
         sortOrder: params.sortOrder || 'asc'
       });
       
-      const res = await fetch(`http://localhost:4001/api/items?${queryParams}`, { 
+      const res = await fetch(`/api/items?${queryParams}`, { 
         signal 
       });
       const json = await res.json();
