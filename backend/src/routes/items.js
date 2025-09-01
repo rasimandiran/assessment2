@@ -2,6 +2,7 @@ const express = require('express');
 const fs = require('fs').promises;
 const path = require('path');
 const router = express.Router();
+const { validateItemMiddleware, validateRateLimit, validateContentType } = require('../utils/validation');
 const DATA_PATH = path.join(__dirname, '../../../data/items.json');
 
 // Async utility to read data (non-blocking)
@@ -123,17 +124,68 @@ router.get('/:id', async (req, res, next) => {
   }
 });
 
-// POST /api/items
-router.post('/', async (req, res, next) => {
+// POST /api/items - With comprehensive validation
+router.post('/', validateItemMiddleware(), async (req, res, next) => {
   try {
-    // TODO: Validate payload (intentional omission)
-    const item = req.body;
+    // Rate limiting
+    validateRateLimit(req, 10, 60000); // 10 requests per minute
+    
+    // Content-Type validation
+    validateContentType(req);
+    
+    // Get validated item from middleware
+    const validatedItem = req.validatedItem;
+    
+    // Read current data
     const data = await readData();
-    item.id = Date.now();
-    data.push(item);
+    
+    // Check for duplicate names (optional business rule)
+    const existingItem = data.find(item => 
+      item.name.toLowerCase() === validatedItem.name.toLowerCase()
+    );
+    
+    if (existingItem) {
+      return res.status(409).json({
+        error: 'Conflict',
+        message: 'An item with this name already exists',
+        existingItem: {
+          id: existingItem.id,
+          name: existingItem.name
+        },
+        timestamp: new Date().toISOString()
+      });
+    }
+    
+    // Create new item with generated ID and timestamp
+    const newItem = {
+      ...validatedItem,
+      id: Date.now(), // Better to use UUID in production
+      createdAt: new Date().toISOString(),
+      updatedAt: new Date().toISOString()
+    };
+    
+    // Add to data array
+    data.push(newItem);
+    
+    // Save to file
     await writeData(data);
-    res.status(201).json(item);
+    
+    // Return created item
+    res.status(201).json({
+      message: 'Item created successfully',
+      item: newItem
+    });
+    
   } catch (err) {
+    // Handle validation errors
+    if (err.name === 'ValidationError') {
+      return res.status(err.status || 400).json({
+        error: err.name,
+        message: err.message,
+        details: err.details,
+        timestamp: new Date().toISOString()
+      });
+    }
     next(err);
   }
 });
